@@ -59,15 +59,15 @@ class TestTinyThread:
         """
         Simple fuzzy post test.
         """
-        initial = fuzzy_generator(16)
-        message = fuzzy_generator(64)
+        thread = TinyThread(fuzzy_generator(16))
 
-        thread = TinyThread(initial)
-        thread.post(message)
+        messages = [fuzzy_generator(64) for i in range(10)]
 
-        time.sleep(10)
+        for message in messages:
+            thread.post(message)
+            time.sleep(2)
 
-        assert repr(thread) == message
+        assert thread.read() == "\n".join(messages)
 
 
 def main(*args):

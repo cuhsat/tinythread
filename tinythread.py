@@ -36,42 +36,42 @@ except ImportError:
 
 
 try:
+    from Crypto import Random
     from Crypto.Cipher import AES
     from Crypto.Hash import SHA512
-    from Crypto.Random import get_random_bytes
 except ImportError:
     sys.exit("Requires PyCrypto (https://github.com/dlitz/pycrypto)")
 
 
-__all__, __version__ = ["TinyThread"], "0.1.0"
+__all__, __version__ = ["TinyThread"], "0.2.1"
 
 
 class TinyThread(object):
     """
     Chain links hidden messages to threads using TinyURL as a key/value store.
     """
-    SALT = b"USE YOUR OWN SALT"
+    SALT = b"[USE YOUR OWN SALT]"
 
     class Chunk(object):
         """
         Thread chunk consisting of link and data.
         """
-        def __init__(self, link, data=""):
+        def __init__(self, link, data=b""):
             """
             Inits the chunk with the parsed data.
             """
             digest = SHA512.new(TinyThread.SALT + link).digest()
 
-            self.alias = binascii.hexlify(digest)[:30] # Max alias length
+            self.alias = binascii.hexlify(digest)[:30].decode("ascii")
             self.key = digest[:32]
             self.iv = digest[-16:]
             self.data = data
 
         def follow(self):
             """
-            Follows the chunks link to next chunk.
+            Follows this chunks link to next chunk.
             """
-            url = "http://tinyurl.com/" + self.alias 
+            url = "http://tinyurl.com/" + self.alias
 
             response = requests.get(url, allow_redirects=False)
 
@@ -79,33 +79,27 @@ class TinyThread(object):
                 data = response.headers["location"].split("#")[-1]
                 data = base64.urlsafe_b64decode(data)
                 data = AES.new(self.key, AES.MODE_CFB, self.iv).decrypt(data)
-                
+
                 return TinyThread.Chunk(data[:16], data[16:])
- 
+
         def append(self, message):
             """
             Appends a new chunk to this one.
             """
             url = "http://tinyurl.com/create.php"
 
-            data = get_random_bytes(16) + message
+            data = Random.get_random_bytes(16) + message
             data = AES.new(self.key, AES.MODE_CFB, self.iv).encrypt(data)
-            data = base64.urlsafe_b64encode(data)
+            data = b"#" + base64.urlsafe_b64encode(data)
 
-            requests.post(url, params={"alias": self.alias, "url": "#" + data})
+            requests.post(url, params={"alias": self.alias, "url": data})
 
     def __init__(self, thread):
         """
         Inits the used thread.
         """
-        self.chunks = [self.Chunk(thread)]
+        self.chunks = [self.Chunk(thread.encode("utf-8"))]
         self.update()
-
-    def __repr__(self):
-        """
-        Returns all threaded messages.
-        """
-        return "\n".join([str(chunk.data) for chunk in self.chunks]).strip()
 
     def update(self):
         """
@@ -119,11 +113,19 @@ class TinyThread(object):
             else:
                 break
 
+    def read(self):
+        """
+        Returns all messages in this thread.
+        """
+        messages = [chunk.data.decode("utf-8") for chunk in self.chunks]
+
+        return "\n".join(messages).strip()
+
     def post(self, message):
         """
         Adds a new message to the thread.
         """
-        self.chunks[-1].append(message)
+        self.chunks[-1].append(message.encode("utf-8"))
         self.update()
 
 
@@ -156,8 +158,8 @@ def main(script, arg="--help", *args):
             if args:
                 thread.post(" ".join(args))
 
-            print(thread)
-                
+            print(thread.read())
+
     except Exception as ex:
         return "%s error: %s" % (script, ex)
 
