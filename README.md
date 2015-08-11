@@ -1,5 +1,5 @@
 # TinyThread ![Build](https://travis-ci.org/cuhsat/tinythread.svg)
-TinyThread `0.1.0`
+TinyThread `0.2.1`
 
 (Ab)using TinyURL for hidden threads.
 
