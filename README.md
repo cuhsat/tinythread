@@ -21,5 +21,3 @@ $ tinythread.py foobar "Hello World"
 
 ## License
 TinyThread is released under the terms of the [MIT License](LICENSE).
-
-[Christian Uhsat](mailto:christian@uhsat.de)
