@@ -1,5 +1,7 @@
 # TinyThread
-TinyThread `0.2.1`
+
+**This Repository is deprecated by its successor**
+**[Epiphyte](https://github.com/cuhsat/epiphyte).**
 
 (Ab)using TinyURL for hidden threads.
 
